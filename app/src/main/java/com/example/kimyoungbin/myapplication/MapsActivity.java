@@ -52,7 +52,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     SensorManager mSensorManager;
     boolean day;
 
-    final static String folderName = Environment.getExternalStorageDirectory().getAbsolutePath()+"/LatLog";;
+    final static String folderName = Environment.getExternalStorageDirectory().getAbsolutePath() + "/LatLog";
+    ;
     final static String fileName = "log.txt";
 
     @Override
@@ -61,12 +62,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         day = true;
 
-        mSensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
+        mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         SensorEventListener mListener = new SensorEventListener() {
             @Override
             public void onSensorChanged(SensorEvent event) {
                 float[] v = event.values;
-                if(event.sensor.getType() == Sensor.TYPE_LIGHT){
+                if (event.sensor.getType() == Sensor.TYPE_LIGHT) {
                     light = v[0];
                 }
             }
@@ -115,23 +116,43 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             mLng = location.getLongitude();
 
             mOnFileWrite();
-            if(mMarker != null)
+            if (mMarker != null)
                 mMarker.remove();
 
 
-            if(light < 1000){
+            if (light < 1000) {
                 Toast.makeText(getApplicationContext(), "indoors", Toast.LENGTH_SHORT).show();
                 lLat = mLat;
                 lLng = mLng;
-            }else{
-                Toast.makeText(getApplicationContext(), "outdoors", Toast.LENGTH_SHORT).show();
-                LatLng latlng = new LatLng(mLat,mLng);
+                if (ActivityCompat.checkSelfPermission(MapsActivity.this, permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(MapsActivity.this, permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                    // TODO: Consider calling
+                    //    ActivityCompat#requestPermissions
+                    // here to request the missing permissions, and then overriding
+                    //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                    //                                          int[] grantResults)
+                    // to handle the case where the user grants the permission. See the documentation
+                    // for ActivityCompat#requestPermissions for more details.
+                    return;
+                }
+                mMap.setMyLocationEnabled(false);
+                LatLng latlng = new LatLng(mLat, mLng);
 
                 mMarker = mMap.addMarker(new MarkerOptions().position(latlng).title("current location"));
 
                 mMap.addPolyline(mPolylineOptions.add(latlng).color(Color.RED).width(5));
 
                 mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latlng, 20));
+            } else {
+                Toast.makeText(getApplicationContext(), "outdoors", Toast.LENGTH_SHORT).show();
+                mMap.clear();
+                mMap.setMyLocationEnabled(true);
+//                LatLng latlng = new LatLng(mLat, mLng);
+//
+//                mMarker = mMap.addMarker(new MarkerOptions().position(latlng).title("current location"));
+//
+//                mMap.addPolyline(mPolylineOptions.add(latlng).color(Color.RED).width(5));
+//
+//                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latlng, 20));
 
             }
         }
@@ -155,6 +176,16 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
+        if (ActivityCompat.checkSelfPermission(this, permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
 
         // Add a marker in Sydney, Australia, and move the camera.
    /* LatLng sydney = new LatLng(mLat, mLng);
