@@ -133,6 +133,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     final static String fileName = "log.txt";
 
+
+
     @Override
     protected void onResume() {
         super.onResume();
@@ -195,28 +197,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
         };
 
-//        //Using the lightSensor
-//        SensorEventListener mListener = new SensorEventListener() {
-//            @Override
-//            public void onSensorChanged(SensorEvent event) {
-//                float[] v = event.values;
-//                if (event.sensor.getType() == Sensor.TYPE_LIGHT) {
-//                    light = v[0];
-//                    if (light < 1000) {
-//                        indoorFlag = true;
-//
-//                    } else {
-//                        indoorFlag = false;
-//                    }
-//                }
-//            }
-//
-//            @Override
-//            public void onAccuracyChanged(Sensor sensor, int accuracy) {
-//
-//            }
-//        };
-//        mSensorManager.registerListener(mListener, mSensorManager.getDefaultSensor(Sensor.TYPE_LIGHT), SensorManager.SENSOR_DELAY_FASTEST);
 
         mPolylineOptions = new PolylineOptions();
 
@@ -270,6 +250,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         SensorManager.SENSOR_DELAY_FASTEST);
         mSensorManager.registerListener(mDirLis, mDirSensor, SensorManager.SENSOR_DELAY_NORMAL);
         mSensorManager.registerListener(mLightLis, mLightSensor, SensorManager.SENSOR_DELAY_FASTEST);
+
     }
 
     @Override
@@ -424,20 +405,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                             // TODO : 화면에 몇 걸음 걸었고 몇 미터 걸었는지
 //                            tv.setText("Step : "+stepCount);
 
-                            try {
-                                mMarker = mMap
-                                        .addMarker(new MarkerOptions().position(latlng).title("current location"));
-
-                                mMap.addPolyline(mPolylineOptions.add(latlng).color(Color.RED).width(5));
-
-                                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latlng, 21));
-
-                                tempCount++;
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                                Toast.makeText(getApplicationContext(), "실내에서 시작했습니다. 현재 위치정보를 알 수 없습니다.", Toast.LENGTH_SHORT).show();
-                            }
                         }
+                        mMarker = mMap.addMarker(new MarkerOptions().position(latlng).title("current location"));
+                        mMap.addPolyline(mPolylineOptions.add(latlng).color(Color.RED).width(5));
+                        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latlng, 21));
+                        tempCount++;
                     }
                 }
             }
