@@ -148,7 +148,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mLng = 126.89999;
         lLat = 37.055555;
         lLng = 126.89999;
-        tv = (TextView) findViewById(R.id.tv);
+
         pocketFlag = true;
         handHeldFlag = true;
         handTypingFlag = true;
@@ -201,6 +201,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         stepCount = 0;
 
         setContentView(R.layout.activity_maps);
+        tv = (TextView) findViewById(R.id.tv);
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
@@ -371,7 +372,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                             }
                         }, 400);
                     }
-
+                }
                     if (stepCount == tempCount) {
                         if (mMarker != null) {
                             mMarker.remove();
@@ -401,17 +402,18 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                             Log.e("포인트 : ", "X : " + String.valueOf(point.x) + " Y : " + String.valueOf(point.y));
                             Log.e("Step ", String.valueOf(stepCount));
                             // TODO : 화면에 몇 걸음 걸었고 몇 미터 걸었는지
-//                            tv.setText("Step : "+stepCount);
+                            tv.setText(String.valueOf(stepCount));
 
                         }
                         mMarker = mMap.addMarker(new MarkerOptions().position(latlng).title("current location"));
                         mMap.addPolyline(mPolylineOptions.add(latlng).color(Color.RED).width(5));
                         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latlng, 21));
                         tempCount++;
+
                     }
                 }
             }
-        }
+
 
         @Override
         public void onAccuracyChanged(Sensor sensor, int accuracy) {
