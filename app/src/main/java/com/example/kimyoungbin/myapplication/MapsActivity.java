@@ -415,6 +415,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                             Log.e("포인트 : ", "X : " + String.valueOf(point.x) + " Y : " + String.valueOf(point.y));
                             Log.e("Step ", String.valueOf(stepCount));
                             // TODO : 화면에 몇 걸음 걸었고 몇 미터 걸었는지
+                            tv.setText("Step : "+stepCount);
                         }
 
                         mMarker = mMap
