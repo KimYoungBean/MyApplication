@@ -134,7 +134,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     final static String fileName = "log.txt";
 
 
-
     @Override
     protected void onResume() {
         super.onResume();
@@ -149,14 +148,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mLng = 126.89999;
         lLat = 37.055555;
         lLng = 126.89999;
-        tv = (TextView)findViewById(R.id.tv);
+        tv = (TextView) findViewById(R.id.tv);
         pocketFlag = true;
         handHeldFlag = true;
         handTypingFlag = true;
         isPocket = false;
         stepCount = 0;
         compassCount = 0;
-
 
 
         //Using the Sensors
@@ -474,7 +472,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
-    private class mLightListener implements SensorEventListener{
+    private class mLightListener implements SensorEventListener {
 
         @Override
         public void onSensorChanged(SensorEvent event) {
@@ -519,13 +517,39 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                 mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latlng, 21));
 
-            }else{
+                if (ActivityCompat.checkSelfPermission(MapsActivity.this, permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(MapsActivity.this, permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                    // TODO: Consider calling
+                    //    ActivityCompat#requestPermissions
+                    // here to request the missing permissions, and then overriding
+                    //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                    //                                          int[] grantResults)
+                    // to handle the case where the user grants the permission. See the documentation
+                    // for ActivityCompat#requestPermissions for more details.
+                    return;
+                }
+                mMap.setMyLocationEnabled(false);
+
+                mMap.getUiSettings().setZoomGesturesEnabled(true);
+                mMap.getUiSettings().setScrollGesturesEnabled(true);
+                mMap.getUiSettings().setRotateGesturesEnabled(true);
+                mMap.getUiSettings().setCompassEnabled(true);
+            } else {
                 Log.e("test", "indoors");
-//                mMap.setMyLocationEnabled(false);
-//                mMap.getUiSettings().setZoomGesturesEnabled(false);
-//                mMap.getUiSettings().setScrollGesturesEnabled(false);
-//                mMap.getUiSettings().setRotateGesturesEnabled(false);
-//                mMap.getUiSettings().setCompassEnabled(true);
+                if (ActivityCompat.checkSelfPermission(MapsActivity.this, permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(MapsActivity.this, permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                    // TODO: Consider calling
+                    //    ActivityCompat#requestPermissions
+                    // here to request the missing permissions, and then overriding
+                    //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                    //                                          int[] grantResults)
+                    // to handle the case where the user grants the permission. See the documentation
+                    // for ActivityCompat#requestPermissions for more details.
+                    return;
+                }
+                mMap.setMyLocationEnabled(false);
+                mMap.getUiSettings().setZoomGesturesEnabled(false);
+                mMap.getUiSettings().setScrollGesturesEnabled(false);
+                mMap.getUiSettings().setRotateGesturesEnabled(false);
+                mMap.getUiSettings().setCompassEnabled(true);
             }
         }
 
@@ -549,6 +573,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
+        mMap.getUiSettings().setZoomControlsEnabled(true);
         mMap.getUiSettings().setZoomGesturesEnabled(false);
         mMap.getUiSettings().setScrollGesturesEnabled(false);
         mMap.getUiSettings().setRotateGesturesEnabled(false);
