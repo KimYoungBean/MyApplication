@@ -143,6 +143,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        mLat = 37.055555;
+        mLng = 126.89999;
+        lLat = 37.055555;
+        lLng = 126.89999;
         tv = (TextView)findViewById(R.id.tv);
         pocketFlag = true;
         handHeldFlag = true;
@@ -150,6 +154,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         isPocket = false;
         stepCount = 0;
         compassCount = 0;
+
+
 
         //Using the Sensors
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
@@ -325,6 +331,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 if (stepCount == 0) {
                     point = new Point(startWidth, startHeight);
                     latlng = new LatLng(lLat, lLng);
+
                     mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latlng, 21));
 
                     //TODO : ZOOM 버튼 만들고 버튼으로 줌 조절
@@ -415,18 +422,22 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                             Log.e("포인트 : ", "X : " + String.valueOf(point.x) + " Y : " + String.valueOf(point.y));
                             Log.e("Step ", String.valueOf(stepCount));
                             // TODO : 화면에 몇 걸음 걸었고 몇 미터 걸었는지
-                            tv.setText("Step : "+stepCount);
+//                            tv.setText("Step : "+stepCount);
+
+                            try {
+                                mMarker = mMap
+                                        .addMarker(new MarkerOptions().position(latlng).title("current location"));
+
+                                mMap.addPolyline(mPolylineOptions.add(latlng).color(Color.RED).width(5));
+
+                                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latlng, 21));
+
+                                tempCount++;
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                                Toast.makeText(getApplicationContext(), "실내에서 시작했습니다. 현재 위치정보를 알 수 없습니다.", Toast.LENGTH_SHORT).show();
+                            }
                         }
-
-                        mMarker = mMap
-                                .addMarker(new MarkerOptions().position(latlng).title("current location"));
-
-                        mMap.addPolyline(mPolylineOptions.add(latlng).color(Color.RED).width(5));
-
-                        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latlng, 21));
-
-                        tempCount++;
-
                     }
                 }
             }
@@ -500,7 +511,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 light = v[0];
                 if (light < 1000) {
                     indoorFlag = true;
-
                 } else {
                     indoorFlag = false;
                 }
@@ -530,13 +540,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 }
 
                 LatLng latlng = new LatLng(mLat, mLng);
-//
-//        mMarker = mMap.addMarker(new MarkerOptions().position(latlng).title("current location"));
-//
-//        mMap.addPolyline(mPolylineOptions.add(latlng).color(Color.RED).width(5));
-//
+
+                mMarker = mMap.addMarker(new MarkerOptions().position(latlng).title("current location"));
+
+                mMap.addPolyline(mPolylineOptions.add(latlng).color(Color.RED).width(5));
+
                 mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latlng, 21));
-                mMap.clear();
                 if (ActivityCompat.checkSelfPermission(MapsActivity.this, permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(MapsActivity.this, permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                     // TODO: Consider calling
                     //    ActivityCompat#requestPermissions
@@ -547,11 +556,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     // for ActivityCompat#requestPermissions for more details.
                     return;
                 }
-                mMap.setMyLocationEnabled(true);
-                mMap.getUiSettings().setZoomControlsEnabled(true);
-                mMap.getUiSettings().setScrollGesturesEnabled(true);
-                mMap.getUiSettings().setRotateGesturesEnabled(true);
-                mMap.getUiSettings().setCompassEnabled(true);
+
             }else{
                 Log.e("test", "indoors");
                 mMap.setMyLocationEnabled(false);
