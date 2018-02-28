@@ -30,6 +30,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -402,10 +403,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                             Log.e("포인트 : ", "X : " + String.valueOf(point.x) + " Y : " + String.valueOf(point.y));
                             Log.e("Step ", String.valueOf(stepCount));
                             // TODO : 화면에 몇 걸음 걸었고 몇 미터 걸었는지
-                            tv.setText(String.valueOf(stepCount));
+                            tv.setText("Step : "+String.valueOf(stepCount)+"step\nMeter : "+String.valueOf(stepCount*0.7)+"m");
 
                         }
-                        mMarker = mMap.addMarker(new MarkerOptions().position(latlng).title("current location"));
+                        mMarker = mMap.addMarker(new MarkerOptions().position(latlng).title("current location").icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_navigation_black_24dp)).rotation(compassValue));
                         mMap.addPolyline(mPolylineOptions.add(latlng).color(Color.RED).width(5));
                         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latlng, 21));
                         tempCount++;
@@ -513,7 +514,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                 LatLng latlng = new LatLng(mLat, mLng);
 
-                mMarker = mMap.addMarker(new MarkerOptions().position(latlng).title("current location"));
+                mMarker = mMap.addMarker(new MarkerOptions().position(latlng).title("current location").icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_navigation_black_24dp)).rotation(compassValue));
 
                 mMap.addPolyline(mPolylineOptions.add(latlng).color(Color.RED).width(5));
 
