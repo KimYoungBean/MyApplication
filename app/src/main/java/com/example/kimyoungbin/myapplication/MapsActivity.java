@@ -47,7 +47,7 @@ import java.io.OutputStreamWriter;
  */
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, SensorEventListener {
-    TextView tv;
+    private TextView mTextView;
     /* Avoid counting faster than stepping */
     private boolean pocketFlag;
     private boolean callingFlag;
@@ -130,10 +130,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private int tempCount = 0;
 
-    final static String folderName = Environment.getExternalStorageDirectory().getAbsolutePath() + "/LatLog";
-
-    final static String fileName = "log.txt";
-
+    private final int lightValue = 1000;
 
     @Override
     protected void onResume() {
@@ -149,14 +146,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mLng = 126.89999;
         lLat = 37.055555;
         lLng = 126.89999;
-
         pocketFlag = true;
         handHeldFlag = true;
         handTypingFlag = true;
         isPocket = false;
         stepCount = 0;
         compassCount = 0;
-
 
         //Using the Sensors
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
@@ -202,10 +197,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         stepCount = 0;
 
         setContentView(R.layout.activity_maps);
-        tv = (TextView) findViewById(R.id.tv);
+
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+
+        mTextView = (TextView) findViewById(R.id.tv);
 
         DisplayMetrics dm = getApplicationContext().getResources().getDisplayMetrics();
 
@@ -216,7 +213,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         startHeight = mDisplayHeight / 2 - 36;
 
         oneStepWidth = mDisplayWidth / 27;
-        oneStepHeight = mDisplayWidth / 67;
+        oneStepHeight = mDisplayHeight / 67;
 
         indoorFlag = false;
 
@@ -286,11 +283,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         Point point;
         LatLng latlng;
 
-        @SuppressLint("SetTextI18n")
         @Override
         public void onSensorChanged(SensorEvent event) {
 
             if (indoorFlag) {
+
                 if (startTime == 0) {
                     startTime = event.timestamp;
                 } else {
@@ -333,7 +330,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     }
 
                     /** Calling **/
-                    else if (E > minCallingThs && E < maxCallingThs && callingFlag && isPocketToHand) {
+                    else if (E > minCallingThs && E < maxCallingThs && callingFlag
+                            && isPocketToHand) {
                         stepCount++;
                         callingFlag = false;
 
@@ -374,47 +372,50 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         }, 400);
                     }
                 }
-                    if (stepCount == tempCount) {
-                        if (mMarker != null) {
-                            mMarker.remove();
-                        }
 
-                        if (tempCount > 0) {
-                            latlng = mMap.getProjection().fromScreenLocation(point);
-                        }
 
-                        /** 걸었을 때 방위에 맞춰서 계산 **/
-                        if (stepCount > 1) {
-                            point.y = startHeight;
-
-                            double widthAngle = Math.sin(Math.toRadians(compassValue));
-                            double heightAngle = Math.cos(Math.toRadians(compassValue));
-
-                            double doubleWidth = startWidth + oneStepWidth * widthAngle;
-                            double doubleHeight = startHeight - oneStepHeight * heightAngle;
-
-                            point.x = (int) doubleWidth;
-                            point.y = (int) doubleHeight;
-                        }
-
-                        if (indoorFlag) {
-                            Log.e("위경도 : ", "위도 : " + String.valueOf(latlng.latitude) + " 경도 : " + String
-                                    .valueOf(latlng.longitude));
-                            Log.e("포인트 : ", "X : " + String.valueOf(point.x) + " Y : " + String.valueOf(point.y));
-                            Log.e("Step ", String.valueOf(stepCount));
-                            // TODO : 화면에 몇 걸음 걸었고 몇 미터 걸었는지
-                            tv.setText("Step : "+String.valueOf(stepCount)+"step\nMeter : "+String.valueOf(stepCount*0.7)+"m");
-
-                        }
-                        mMarker = mMap.addMarker(new MarkerOptions().position(latlng).title("current location").icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_navigation_black_24dp)).rotation(compassValue));
-                        mMap.addPolyline(mPolylineOptions.add(latlng).color(Color.RED).width(5));
-                        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latlng, 21));
-                        tempCount++;
-
+                if (stepCount == tempCount) {
+                    if (mMarker != null) {
+                        mMarker.remove();
                     }
+
+
+                    if (tempCount > 0) {
+                        latlng = mMap.getProjection().fromScreenLocation(point);
+                    }
+
+                    /** 걸었을 때 방위에 맞춰서 계산 **/
+                    if (stepCount > 1) {
+                        point.y = startHeight;
+
+                        double widthAngle = Math.sin(Math.toRadians(compassValue));
+                        double heightAngle = Math.cos(Math.toRadians(compassValue));
+
+                        double doubleWidth = startWidth + oneStepWidth * widthAngle;
+                        double doubleHeight = startHeight - oneStepHeight * heightAngle;
+
+                        point.x = (int) doubleWidth;
+                        point.y = (int) doubleHeight;
+                    }
+
+                    Log.e("위경도 : ",
+                            "위도 : " + String.valueOf(latlng.latitude) + " 경도 : " + String
+                                    .valueOf(latlng.longitude));
+                    Log.e("포인트 : ",
+                            "X : " + String.valueOf(point.x) + " Y : " + String.valueOf(point.y));
+                    Log.e("Step ", String.valueOf(stepCount));
+                    // TODO : 화면에 몇 걸음 걸었고 몇 미터 걸었는지
+
+                    mTextView.setText(String.valueOf(stepCount));
+
+                    mMarker = mMap.addMarker(
+                            new MarkerOptions().position(latlng).title("current location"));
+                    mMap.addPolyline(mPolylineOptions.add(latlng).color(Color.RED).width(5));
+                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latlng, 21));
+                    tempCount++;
                 }
             }
-
+        }
 
         @Override
         public void onAccuracyChanged(Sensor sensor, int accuracy) {
@@ -475,14 +476,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
-    private class mLightListener implements SensorEventListener {
+    private class mLightListener implements SensorEventListener{
 
         @Override
         public void onSensorChanged(SensorEvent event) {
             float[] v = event.values;
             if (event.sensor.getType() == Sensor.TYPE_LIGHT) {
                 light = v[0];
-                if (light < 1000) {
+                if (light < lightValue) {
                     indoorFlag = true;
                 } else {
                     indoorFlag = false;
@@ -514,45 +515,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                 LatLng latlng = new LatLng(mLat, mLng);
 
-                mMarker = mMap.addMarker(new MarkerOptions().position(latlng).title("current location").icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_navigation_black_24dp)).rotation(compassValue));
+                mMarker = mMap.addMarker(new MarkerOptions().position(latlng).title("current location"));
 
                 mMap.addPolyline(mPolylineOptions.add(latlng).color(Color.RED).width(5));
 
                 mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latlng, 21));
 
-                if (ActivityCompat.checkSelfPermission(MapsActivity.this, permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(MapsActivity.this, permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                    // TODO: Consider calling
-                    //    ActivityCompat#requestPermissions
-                    // here to request the missing permissions, and then overriding
-                    //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                    //                                          int[] grantResults)
-                    // to handle the case where the user grants the permission. See the documentation
-                    // for ActivityCompat#requestPermissions for more details.
-                    return;
-                }
-                mMap.setMyLocationEnabled(false);
-
-                mMap.getUiSettings().setZoomGesturesEnabled(true);
-                mMap.getUiSettings().setScrollGesturesEnabled(true);
-                mMap.getUiSettings().setRotateGesturesEnabled(true);
-                mMap.getUiSettings().setCompassEnabled(true);
-            } else {
+            }else{
                 Log.e("test", "indoors");
-                if (ActivityCompat.checkSelfPermission(MapsActivity.this, permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(MapsActivity.this, permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                    // TODO: Consider calling
-                    //    ActivityCompat#requestPermissions
-                    // here to request the missing permissions, and then overriding
-                    //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                    //                                          int[] grantResults)
-                    // to handle the case where the user grants the permission. See the documentation
-                    // for ActivityCompat#requestPermissions for more details.
-                    return;
-                }
-                mMap.setMyLocationEnabled(false);
-                mMap.getUiSettings().setZoomGesturesEnabled(false);
-                mMap.getUiSettings().setScrollGesturesEnabled(false);
-                mMap.getUiSettings().setRotateGesturesEnabled(false);
-                mMap.getUiSettings().setCompassEnabled(true);
+//                mMap.setMyLocationEnabled(false);
+//                mMap.getUiSettings().setZoomGesturesEnabled(false);
+//                mMap.getUiSettings().setScrollGesturesEnabled(false);
+//                mMap.getUiSettings().setRotateGesturesEnabled(false);
+//                mMap.getUiSettings().setCompassEnabled(true);
             }
         }
 
@@ -576,7 +551,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
-        mMap.getUiSettings().setZoomControlsEnabled(true);
         mMap.getUiSettings().setZoomGesturesEnabled(false);
         mMap.getUiSettings().setScrollGesturesEnabled(false);
         mMap.getUiSettings().setRotateGesturesEnabled(false);
@@ -589,28 +563,4 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
 
-    public void mOnFileWrite(){
-        String contents = "Log 생성\n"+mLat+" "+mLng+"\n";
-        WriteTextFile(folderName, fileName, contents);
-    }
-
-    public void WriteTextFile(String folderNameame, String fileNameame, String contents){
-        try{
-            File dir = new File(folderName);
-            if(!dir.exists()){
-                dir.mkdir();
-            }
-            FileOutputStream fos = new FileOutputStream(folderName+"/"+fileName, true);
-            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(fos));
-            writer.write(contents);
-            writer.flush();
-
-            writer.close();
-            fos.close();
-        }catch (IOException e){
-            e.printStackTrace();
-        }
-    }
-
 }
-
