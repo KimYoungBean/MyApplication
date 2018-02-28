@@ -518,24 +518,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 mMap.addPolyline(mPolylineOptions.add(latlng).color(Color.RED).width(5));
 
                 mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latlng, 21));
-                if (ActivityCompat.checkSelfPermission(MapsActivity.this, permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(MapsActivity.this, permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                    // TODO: Consider calling
-                    //    ActivityCompat#requestPermissions
-                    // here to request the missing permissions, and then overriding
-                    //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                    //                                          int[] grantResults)
-                    // to handle the case where the user grants the permission. See the documentation
-                    // for ActivityCompat#requestPermissions for more details.
-                    return;
-                }
 
             }else{
                 Log.e("test", "indoors");
-                mMap.setMyLocationEnabled(false);
-                mMap.getUiSettings().setZoomGesturesEnabled(false);
-                mMap.getUiSettings().setScrollGesturesEnabled(false);
-                mMap.getUiSettings().setRotateGesturesEnabled(false);
-                mMap.getUiSettings().setCompassEnabled(true);
+//                mMap.setMyLocationEnabled(false);
+//                mMap.getUiSettings().setZoomGesturesEnabled(false);
+//                mMap.getUiSettings().setScrollGesturesEnabled(false);
+//                mMap.getUiSettings().setRotateGesturesEnabled(false);
+//                mMap.getUiSettings().setCompassEnabled(true);
             }
         }
 
