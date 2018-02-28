@@ -87,6 +87,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private SensorEventListener mDirLis;
     private Sensor mDirSensor = null;
 
+    //Using the LightSensor
+    private SensorEventListener mLightLis;
+    private Sensor mLightSensor = null;
+
     // compass Value
     private int compassValue;
 
@@ -159,6 +163,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         //Using the DirSensor
         mDirSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION);
 
+        //Using the lightsensor
+        mLightSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_LIGHT);
+
         //Using the Closesensor
         mClsSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY);
         mClsLis = new SensorEventListener() {
@@ -182,28 +189,28 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
         };
 
-        //Using the lightSensor
-        SensorEventListener mListener = new SensorEventListener() {
-            @Override
-            public void onSensorChanged(SensorEvent event) {
-                float[] v = event.values;
-                if (event.sensor.getType() == Sensor.TYPE_LIGHT) {
-                    light = v[0];
-                    if (light < 1000) {
-                        indoorFlag = true;
-
-                    } else {
-                        indoorFlag = false;
-                    }
-                }
-            }
-
-            @Override
-            public void onAccuracyChanged(Sensor sensor, int accuracy) {
-
-            }
-        };
-        mSensorManager.registerListener(mListener, mSensorManager.getDefaultSensor(Sensor.TYPE_LIGHT), SensorManager.SENSOR_DELAY_FASTEST);
+//        //Using the lightSensor
+//        SensorEventListener mListener = new SensorEventListener() {
+//            @Override
+//            public void onSensorChanged(SensorEvent event) {
+//                float[] v = event.values;
+//                if (event.sensor.getType() == Sensor.TYPE_LIGHT) {
+//                    light = v[0];
+//                    if (light < 1000) {
+//                        indoorFlag = true;
+//
+//                    } else {
+//                        indoorFlag = false;
+//                    }
+//                }
+//            }
+//
+//            @Override
+//            public void onAccuracyChanged(Sensor sensor, int accuracy) {
+//
+//            }
+//        };
+//        mSensorManager.registerListener(mListener, mSensorManager.getDefaultSensor(Sensor.TYPE_LIGHT), SensorManager.SENSOR_DELAY_FASTEST);
 
         mPolylineOptions = new PolylineOptions();
 
@@ -247,6 +254,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mDirLis = new mDirectionListener();
         mAccLis = new AccelometerListener();
         mGyroLis = new GyroscopeListener();
+        mLightLis = new mLightListener();
         mSensorManager
                 .registerListener(mAccLis, mAccelometerSensor, SensorManager.SENSOR_DELAY_UI);
         mSensorManager
@@ -255,6 +263,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 .registerListener(mClsLis, mSensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY),
                         SensorManager.SENSOR_DELAY_FASTEST);
         mSensorManager.registerListener(mDirLis, mDirSensor, SensorManager.SENSOR_DELAY_NORMAL);
+        mSensorManager.registerListener(mLightLis, mLightSensor, SensorManager.SENSOR_DELAY_FASTEST);
     }
 
     @Override
@@ -471,11 +480,34 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             if (event.sensor.getType() == Sensor.TYPE_ORIENTATION) {
                 compassValue = (int) event.values[0];
                 //Log.e("compassValue : ", String.valueOf(compassValue));
+
             }
         }
 
         @Override
         public void onAccuracyChanged(Sensor sensor, int i) {
+
+        }
+    }
+
+    private class mLightListener implements SensorEventListener{
+
+        @Override
+        public void onSensorChanged(SensorEvent event) {
+            float[] v = event.values;
+            if (event.sensor.getType() == Sensor.TYPE_LIGHT) {
+                light = v[0];
+                if (light < 1000) {
+                    indoorFlag = true;
+
+                } else {
+                    indoorFlag = false;
+                }
+            }
+        }
+
+        @Override
+        public void onAccuracyChanged(Sensor sensor, int accuracy) {
 
         }
     }
