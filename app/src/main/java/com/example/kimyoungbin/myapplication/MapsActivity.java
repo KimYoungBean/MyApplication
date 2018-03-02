@@ -118,6 +118,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     double mLng;
     double lLat;
     double lLng;
+    private boolean drawFlag;
+
+    private Button mButton;
 
     private float light;
     private boolean indoorFlag;
@@ -158,6 +161,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         isPocket = false;
         stepCount = 0;
         compassCount = 0;
+        drawFlag = false;
 
         //Using the Sensors
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
@@ -209,6 +213,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mapFragment.getMapAsync(this);
 
         mTextView = (TextView) findViewById(R.id.tv);
+        mButton = (Button) findViewById(R.id.btn_draw_gps);
+        mButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                drawFlag = true;
+            }
+        });
 
         Intent intent = getIntent();
         String data= intent.getExtras().getString("height");
@@ -424,6 +435,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latlng, 21));
                     tempCount++;
                 }
+            }else {
+                tempCount = 0;
+                stepCount = 0;
             }
         }
 
@@ -512,35 +526,36 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         @Override
         public void onLocationChanged(Location location) {
-            if (!indoorFlag) {
+            if (drawFlag) {
+                if (!indoorFlag) {
 
-                mLat = location.getLatitude();
-                mLng = location.getLongitude();
-                Log.e("test", "outdoors");
-                lLat = mLat;
-                lLng = mLng;
-                if (mMarker != null) {
-                    mMarker.remove();
-                }
+                    mLat = location.getLatitude();
+                    mLng = location.getLongitude();
+                    Log.e("test", "outdoors");
+                    lLat = mLat;
+                    lLng = mLng;
+                    if (mMarker != null) {
+                        mMarker.remove();
+                    }
 
-                LatLng latlng = new LatLng(mLat, mLng);
+                    LatLng latlng = new LatLng(mLat, mLng);
 
-                mMarker = mMap.addMarker(new MarkerOptions().position(latlng).title("current location"));
+                    mMarker = mMap.addMarker(new MarkerOptions().position(latlng).title("current location"));
 
-                mMap.addPolyline(mPolylineOptions.add(latlng).color(Color.RED).width(5));
+                    mMap.addPolyline(mPolylineOptions.add(latlng).color(Color.RED).width(5));
 
-                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latlng, 21));
+                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latlng, 21));
 
-            }else{
-                Log.e("test", "indoors");
+                } else {
+                    Log.e("test", "indoors");
 //                mMap.setMyLocationEnabled(false);
 //                mMap.getUiSettings().setZoomGesturesEnabled(false);
 //                mMap.getUiSettings().setScrollGesturesEnabled(false);
 //                mMap.getUiSettings().setRotateGesturesEnabled(false);
 //                mMap.getUiSettings().setCompassEnabled(true);
+                }
             }
         }
-
         @Override
         public void onStatusChanged(String provider, int status, Bundle extras) {
 
