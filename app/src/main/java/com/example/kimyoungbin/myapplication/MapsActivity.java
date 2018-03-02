@@ -4,6 +4,7 @@ import android.Manifest.permission;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.Point;
@@ -66,6 +67,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private final double handHeldXThs = 1.0;
     private final double handHeldZThs = 1.5;
     private final double handTypingThs = 0.5;
+
+    private int height;
 
     private int stepCount;
     private int compassCount;
@@ -142,6 +145,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        height = 0;
+
+
         mLat = 37.055555;
         mLng = 126.89999;
         lLat = 37.055555;
@@ -203,6 +209,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mapFragment.getMapAsync(this);
 
         mTextView = (TextView) findViewById(R.id.tv);
+
+        Intent intent = getIntent();
+        String data= intent.getExtras().getString("height");
+        height = Integer.parseInt(data);
 
         DisplayMetrics dm = getApplicationContext().getResources().getDisplayMetrics();
 
@@ -406,7 +416,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     Log.e("Step ", String.valueOf(stepCount));
                     // TODO : 화면에 몇 걸음 걸었고 몇 미터 걸었는지
 
-                    mTextView.setText(String.valueOf(stepCount));
+                    mTextView.setText("Step : "+String.valueOf(stepCount)+"\nMeter : "+String.format("%.2f",stepCount*(height-110)*0.01));
 
                     mMarker = mMap.addMarker(
                             new MarkerOptions().position(latlng).title("current location"));

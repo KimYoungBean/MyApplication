@@ -52,7 +52,9 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 mOnFileWrite(v);
+                String data = height.getText().toString();
                 Intent intent = new Intent(MainActivity.this, MapsActivity.class);
+                intent.putExtra("height", ""+data);
                 startActivity(intent);
                 finish();
             }
