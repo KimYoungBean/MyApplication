@@ -550,11 +550,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-
+        mMap.getUiSettings().setZoomControlsEnabled(true);
         mMap.getUiSettings().setZoomGesturesEnabled(false);
+        mMap.getUiSettings().setTiltGesturesEnabled(false);
         mMap.getUiSettings().setScrollGesturesEnabled(false);
         mMap.getUiSettings().setRotateGesturesEnabled(false);
-        mMap.getUiSettings().setCompassEnabled(true);
+        mMap.getUiSettings().setCompassEnabled(false);
 
         // Add a marker in Sydney, Australia, and move the camera.
    /* LatLng sydney = new LatLng(mLat, mLng);
