@@ -42,6 +42,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
 
 /**
  * Created by kimyoungbin on 2018. 2. 26..
@@ -49,6 +52,9 @@ import java.io.OutputStreamWriter;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, SensorEventListener {
     private TextView mTextView;
+    int cnt;
+    private double[] averval = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    private double average;
     /* Avoid counting faster than stepping */
     private boolean pocketFlag;
     private boolean callingFlag;
@@ -95,8 +101,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private SensorEventListener mLightLis;
     private Sensor mLightSensor = null;
 
+
     // compass Value
     private int compassValue;
+
 
     // To distinguish state
     private boolean isPocket;
@@ -109,6 +117,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     // prevent abnormal count
     private long startTime;
     private long endTime;
+
+    private long mStart;
+    private long mEnd;
 
     // To use googlemap
     private GoogleMap mMap;
@@ -138,6 +149,185 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private final int lightValue = 1000;
 
+
+    /* sun */
+    TextView sunset, sunrise;
+
+    int Day;
+    int Year;
+    int Month;
+    double rh,sh,rm,sm,rs,ss;
+    int Hour, Minute, Second;
+
+    private static final double PI = 3.141592;
+
+    private boolean IsLeapYear(int year){
+        return ((year%4==0 && year%100!=0) || year % 400==0);
+    }
+
+    private int GetLastDay(int uiYear, int ucMonth){
+        switch (ucMonth){
+            case 2:
+                if((uiYear%4)==0){
+                    if(uiYear%100==0){
+                        if(uiYear%400==0) return 29;
+                        return 28;
+                    }
+                    return 29;
+                }
+                return 28;
+            case 4:
+            case 6:
+            case 9:
+            case 11:
+                return 30;
+        }
+        return 31;
+    }
+
+    private int CalcJulianDay(int uiYear, int ucMonth, int ucDay){
+        int i;
+        int iJulDay=0;
+        for(i=1; i<ucMonth; i++){
+            iJulDay += GetLastDay(uiYear, i);
+        }
+        iJulDay += ucDay;
+
+        return iJulDay;
+    }
+
+    private double CalcGamma(int iJulDay){
+        return (2.0 * PI/365.0)*(iJulDay-1);
+    }
+
+    private double CalcGamma2(int iJulDay, int hour){
+        return (2.0 * PI/365.0)*(iJulDay-1+(hour/24.0));
+    }
+
+    private double CalcEqofTime(double gamma){
+        return (229.18 *(0.000075 + 0.001868 * Math.cos(gamma)-0.032077*Math.sin(gamma)-0.014615*Math.cos(2*gamma)-0.040849*Math.sin(2*gamma)));
+    }
+
+    private double CalcSolarDec(double gamma){
+        return (0.006918 - 0.399912 * Math.cos(gamma)+0.070257*Math.sin(gamma)- 0.006758*Math.cos(2*gamma)+0.000907*Math.sin(2*gamma));
+    }
+
+    private double DegreeToRadian(double angleDeg){
+        return (PI*angleDeg/180.0);
+    }
+
+    private double RadianToDegree(double angleRad){
+        return (180*angleRad/PI);
+    }
+
+    private double CalcHourAngle(double latitude, double solarDec, int time){
+        double latRad = DegreeToRadian(latitude);
+        double hour_angle = Math.acos(Math.cos(DegreeToRadian(90.833))/(Math.cos(latRad)*Math.cos(solarDec)) - Math.tan(latRad)*Math.tan(solarDec));
+
+        if(time==1){
+            return hour_angle;
+        }else if(time==0){
+            return -hour_angle;
+        }
+        return 0;
+    }
+
+    private double CalcSunriseGMT(int iJulDay, double latitude, double longitude){
+        double gamma = CalcGamma(iJulDay);
+        double eqTime = CalcEqofTime(gamma);
+        double solarDec = CalcSolarDec(gamma);
+        double hourAngle = CalcHourAngle(latitude, solarDec, 1);
+        double delta = longitude - RadianToDegree(hourAngle);
+        double timeDiff = 4.0*delta;
+        double timeGMT = 720.0+timeDiff - eqTime;
+        double gamma_sunrise = CalcGamma2(iJulDay, (int)(timeGMT/60.0));
+        eqTime = CalcEqofTime(gamma_sunrise);
+        solarDec = CalcSolarDec(gamma_sunrise);
+        hourAngle = CalcHourAngle(latitude, solarDec, 1);
+        delta = longitude-RadianToDegree(hourAngle);
+        timeDiff = 4.0*delta;
+        timeGMT = 720.0+timeDiff-eqTime;
+
+        return timeGMT;
+    }
+
+    private double CalcSunsetGMT(int iJulDay, double latitude, double longitude){
+        double gamma = CalcGamma(iJulDay+1);
+        double eqTime = CalcEqofTime(gamma);
+        double solarDec = CalcSolarDec(gamma);
+        double hourAngle = CalcHourAngle(latitude, solarDec, 0);
+        double delta = longitude-RadianToDegree(hourAngle);
+        double timeDiff = 4.0*delta;
+        double setTimeGMT = 720.0+timeDiff-eqTime;
+
+        double gamma_sunset = CalcGamma2(iJulDay, (int)(setTimeGMT/60.0));
+        eqTime = CalcEqofTime(gamma_sunset);
+        solarDec = CalcSolarDec(gamma_sunset);
+        hourAngle = CalcHourAngle(latitude, solarDec, 0);
+        delta = longitude - RadianToDegree(hourAngle);
+        timeDiff = 4.0*delta;
+        setTimeGMT = 720.0+timeDiff-eqTime;
+        return setTimeGMT;
+    }
+
+    private void GetTimeString1(double minutes){
+        double floatHour = minutes/60.0;
+        double hour = Math.floor(floatHour);
+        double floatMinute = 60.0*(floatHour-Math.floor(floatHour));
+        double minute = Math.floor(floatMinute);
+        double floatSec = 60.0*(floatMinute - Math.floor(floatMinute));
+        double second = Math.floor(floatSec);
+
+        rh = hour;
+        rm = minute;
+        rs = second;
+        Log.v(""," "+hour+"시 "+minute+"분 "+second+"초");
+    }
+    private void GetTimeString2(double minutes){
+        double floatHour = minutes/60.0;
+        double hour = Math.floor(floatHour);
+        double floatMinute = 60.0*(floatHour-Math.floor(floatHour));
+        double minute = Math.floor(floatMinute);
+        double floatSec = 60.0*(floatMinute - Math.floor(floatMinute));
+        double second = Math.floor(floatSec);
+
+        sh = hour;
+        sm = minute;
+        ss = second;
+        Log.v(""," "+hour+"시 "+minute+"분 "+second+"초");
+
+
+    }
+
+    public double GetSunriseTime(int year, int month, int day, double latitude, double longitude, int zone, int daySavings){
+        int julday = CalcJulianDay(year, month, day);
+        double timeLST = CalcSunriseGMT(julday, latitude, longitude)-(60.0*zone)+daySavings;
+        return timeLST;
+    }
+
+    public double GetSunsetTime(int year, int month, int day, double latitude, double longitude, int zone, int daySavings){
+        int julday = CalcJulianDay(year, month, day);
+        double timeLST = CalcSunsetGMT(julday, latitude, longitude)-(60.0*zone)+daySavings;
+        return timeLST;
+    }
+
+    public void sunsettest(){
+        double latitude, longitude, lst;
+        latitude = mLat;
+        longitude = mLng;
+        lst = GetSunsetTime(Year, Month, Day, latitude, longitude, -9,0);
+        GetTimeString2(lst);
+    }
+
+    public void sunrisetest(){
+        double latitude, longitude, lst;
+        latitude = mLat;
+        longitude = mLng;
+        lst = GetSunriseTime(Year, Month, Day, latitude, longitude, -9,0);
+        GetTimeString1(lst);
+    }
+
+
     @Override
     protected void onResume() {
         super.onResume();
@@ -149,7 +339,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         super.onCreate(savedInstanceState);
 
         height = 0;
-
+        cnt = 0;
+        average = 0;
 
         mLat = 37.055555;
         mLng = 126.89999;
@@ -163,6 +354,44 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         compassCount = 0;
         drawFlag = false;
 
+
+        // Date & time
+        Calendar c= Calendar.getInstance();
+
+        long now = System.currentTimeMillis();
+        Date date = new Date(now);
+
+        SimpleDateFormat dataFormat= new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss");
+        SimpleDateFormat CurYearFormat = new SimpleDateFormat("yyyy");
+        SimpleDateFormat CurMonthFormat = new SimpleDateFormat("MM");
+        SimpleDateFormat CurDayFormat = new SimpleDateFormat("dd");
+        SimpleDateFormat CurHourFormat = new SimpleDateFormat("HH");
+        SimpleDateFormat CurMinuteFormat = new SimpleDateFormat("mm");
+
+        String strCurYear = CurYearFormat.format(date);
+        String strCurMonth = CurMonthFormat.format(date);
+        String strCurDay = CurDayFormat.format(date);
+        String strCurHour = CurHourFormat.format(date);
+        String strCurMinute = CurMinuteFormat.format(date);
+
+        Year = Integer.valueOf(strCurYear);
+        Month = Integer.valueOf(strCurMonth);
+        Day = Integer.valueOf(strCurDay);
+        Hour = Integer.valueOf(strCurHour);
+        Minute = Integer.valueOf(strCurMinute);
+
+//        String dateTime = dataFormat.format(c.getTime());
+//        String date[] = dateTime.split(".");
+//        Year = Integer.parseInt(date[0]);
+//        Month = Integer.parseInt(date[1]);
+//        Day = Integer.parseInt(date[2]);
+//        Hour = Integer.parseInt(date[3]);
+//        Minute = Integer.parseInt(date[4]);
+//        Second = Integer.parseInt(date[5]);
+
+
+        sunrisetest();
+        sunsettest();
         //Using the Sensors
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
 
@@ -177,6 +406,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         //Using the lightsensor
         mLightSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_LIGHT);
+
 
         //Using the Closesensor
         mClsSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY);
@@ -222,7 +452,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         });
 
         Intent intent = getIntent();
-        String data= intent.getExtras().getString("height");
+        String data = intent.getExtras().getString("height");
         height = Integer.parseInt(data);
 
         DisplayMetrics dm = getApplicationContext().getResources().getDisplayMetrics();
@@ -259,6 +489,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mAccLis = new AccelometerListener();
         mGyroLis = new GyroscopeListener();
         mLightLis = new mLightListener();
+
         mSensorManager
                 .registerListener(mAccLis, mAccelometerSensor, SensorManager.SENSOR_DELAY_UI);
         mSensorManager
@@ -426,8 +657,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                             "X : " + String.valueOf(point.x) + " Y : " + String.valueOf(point.y));
                     Log.e("Step ", String.valueOf(stepCount));
                     // TODO : 화면에 몇 걸음 걸었고 몇 미터 걸었는지
+                    mTextView.setText("Step : " + String.valueOf(stepCount) + "\nMeter : " + String.format("%.2f", stepCount * (height - 110) * 0.01));
 
-                    mTextView.setText("Step : "+String.valueOf(stepCount)+"\nMeter : "+String.format("%.2f",stepCount*(height-110)*0.01));
 
                     mMarker = mMap.addMarker(
                             new MarkerOptions().position(latlng).title("current location"));
@@ -435,9 +666,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latlng, 21));
                     tempCount++;
                 }
-            }else {
-                tempCount = 0;
-                stepCount = 0;
             }
         }
 
@@ -500,18 +728,56 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
-    private class mLightListener implements SensorEventListener{
+    private class mLightListener implements SensorEventListener {
 
         @Override
         public void onSensorChanged(SensorEvent event) {
             float[] v = event.values;
             if (event.sensor.getType() == Sensor.TYPE_LIGHT) {
                 light = v[0];
-                if (light < lightValue) {
-                    indoorFlag = true;
-                } else {
-                    indoorFlag = false;
+                //day
+                if(rh<Hour&&Hour<sh){
+                    if (light < lightValue) {
+                        indoorFlag = true;
+                    } else {
+                        indoorFlag = false;
+                    }
+                }else if(rh==Hour){
+                    if(Minute>=rm){
+                        if (light < lightValue) {
+                            indoorFlag = true;
+                        } else {
+                            indoorFlag = false;
+                        }
+                    }else{
+                        if (light < 50) {
+                            indoorFlag = false;
+                        } else {
+                            indoorFlag = true;
+                        }
+                    }
+                }else if(Hour==sh){
+                    if(Minute<=sm){
+                        if (light < lightValue) {
+                            indoorFlag = true;
+                        } else {
+                            indoorFlag = false;
+                        }
+                    }
+                }else{
+                    //(Hour>sh||Hour<rh)
+                    //night
+                    if (light < 50) {
+                        indoorFlag = false;
+                    } else {
+                        indoorFlag = true;
+                    }
                 }
+//                if (light < lightValue) {
+//                    indoorFlag = true;
+//                } else {
+//                    indoorFlag = false;
+//                }
             }
         }
 
@@ -521,40 +787,41 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
-    private final LocationListener mLocationListener = new LocationListener() {
 
+    private final LocationListener mLocationListener = new LocationListener() {
 
         @Override
         public void onLocationChanged(Location location) {
-            if (drawFlag) {
-                if (!indoorFlag) {
+            if (!indoorFlag) {
 
-                    mLat = location.getLatitude();
-                    mLng = location.getLongitude();
-                    Log.e("test", "outdoors");
-                    lLat = mLat;
-                    lLng = mLng;
-                    if (mMarker != null) {
-                        mMarker.remove();
-                    }
+                mLat = location.getLatitude();
+                mLng = location.getLongitude();
+                Log.e("test", "outdoors");
+                lLat = mLat;
+                lLng = mLng;
+                if (mMarker != null) {
+                    mMarker.remove();
+                }
 
-                    LatLng latlng = new LatLng(mLat, mLng);
+                LatLng latlng = new LatLng(mLat, mLng);
 
-                    mMarker = mMap.addMarker(new MarkerOptions().position(latlng).title("current location"));
-
+                mMarker = mMap.addMarker(new MarkerOptions().position(latlng).title("current location"));
+                if (drawFlag) {
                     mMap.addPolyline(mPolylineOptions.add(latlng).color(Color.RED).width(5));
+                }
+                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latlng, 21));
 
-                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latlng, 21));
+            } else {
+                Log.e("test", "indoors");
 
-                } else {
-                    Log.e("test", "indoors");
-//                mMap.setMyLocationEnabled(false);
+
+//                mMap.setMyLocationEnabled(true);
 //                mMap.getUiSettings().setZoomGesturesEnabled(false);
 //                mMap.getUiSettings().setScrollGesturesEnabled(false);
 //                mMap.getUiSettings().setRotateGesturesEnabled(false);
 //                mMap.getUiSettings().setCompassEnabled(true);
                 }
-            }
+
         }
         @Override
         public void onStatusChanged(String provider, int status, Bundle extras) {
@@ -575,6 +842,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
+//        mMap.getUiSettings().setMyLocationButtonEnabled(true);
         mMap.getUiSettings().setZoomControlsEnabled(true);
         mMap.getUiSettings().setZoomGesturesEnabled(false);
         mMap.getUiSettings().setTiltGesturesEnabled(false);
@@ -590,3 +858,4 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
 
 }
+
