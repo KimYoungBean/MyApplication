@@ -169,24 +169,25 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private static final double PI = 3.141592;
 
-    private boolean IsLeapYear(int year)
-    {
+    private boolean IsLeapYear(int year) {
         return ((year % 4 == 0 && year % 100 != 0) || year % 400 == 0);
     }
 
-    private int GetLastDay(int uiYear, int ucMonth)
-    {
-        switch(ucMonth) {
+    private int GetLastDay(int uiYear, int ucMonth) {
+        switch (ucMonth) {
             case 2: // 2월
-                if( (uiYear % 4) == 0 ) {        // 4로 나누어 떨어지는 해는 윤년임.
-                    if(uiYear % 100 == 0) {    // 그중에서 100으로 나누어 떨어지는 해는 평년임
-                        if(uiYear % 400 == 0) return 29; // 그중에서 400으로 나누어 떨어지는 해는 윤년임.
+                if ((uiYear % 4) == 0) {        // 4로 나누어 떨어지는 해는 윤년임.
+                    if (uiYear % 100 == 0) {    // 그중에서 100으로 나누어 떨어지는 해는 평년임
+                        if (uiYear % 400 == 0) return 29; // 그중에서 400으로 나누어 떨어지는 해는 윤년임.
                         return 28; // 평년
                     }
                     return 29;    // 윤년
                 }
                 return 28;    // else 평년
-            case 4: case 6: case 9: case 11: // 4, 6, 9, 11월
+            case 4:
+            case 6:
+            case 9:
+            case 11: // 4, 6, 9, 11월
                 return 30; // 30일
         }
 
@@ -194,12 +195,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
 
-    private int CalcJulianDay( int uiYear,  int ucMonth,  int ucDay)
-    {
+    private int CalcJulianDay(int uiYear, int ucMonth, int ucDay) {
         int i;
         int iJulDay;
         iJulDay = 0;
-        for(i=1; i<ucMonth; i++) {
+        for (i = 1; i < ucMonth; i++) {
             iJulDay += GetLastDay(uiYear, i);
         }
         iJulDay += ucDay;
@@ -207,52 +207,45 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         return iJulDay;
     }
 
-    private double CalcGamma(int iJulDay)
-    {
+    private double CalcGamma(int iJulDay) {
         return (2.0 * PI / 365.0) * (iJulDay - 1);
     }
-    private double CalcGamma2(int iJulDay, int hour)
-    {
-        return (2.0 * PI / 365.0) * (iJulDay - 1 + (hour/24.0));
+
+    private double CalcGamma2(int iJulDay, int hour) {
+        return (2.0 * PI / 365.0) * (iJulDay - 1 + (hour / 24.0));
     }
 
     // Return the equation of time value for the given date.
-    private double CalcEqofTime(double gamma)
-    {
+    private double CalcEqofTime(double gamma) {
         return (229.18 * (0.000075 + 0.001868 * Math.cos(gamma) - 0.032077 * Math.sin(gamma) - 0.014615 * Math.cos(2 * gamma) - 0.040849 * Math.sin(2 * gamma)));
 
     }
 
     // Return the solar declination angle (in radians) for the given date.
-    private double CalcSolarDec(double gamma)
-    {
+    private double CalcSolarDec(double gamma) {
         return (0.006918 - 0.399912 * Math.cos(gamma) + 0.070257 * Math.sin(gamma) - 0.006758 * Math.cos(2 * gamma) + 0.000907 * Math.sin(2 * gamma));
     }
 
-    private double DegreeToRadian(double angleDeg)
-    {
+    private double DegreeToRadian(double angleDeg) {
         return (PI * angleDeg / 180.0);
     }
 
-    private double RadianToDegree(double angleRad)
-    {
-        return (180*angleRad / PI);
+    private double RadianToDegree(double angleRad) {
+        return (180 * angleRad / PI);
     }
 
-    private double CalcHourAngle(double latitude, double solarDec, int time)
-    {
+    private double CalcHourAngle(double latitude, double solarDec, int time) {
         double latRad = DegreeToRadian(latitude);
         double hour_angle = Math.acos(Math.cos(DegreeToRadian(90.833)) / (Math.cos(latRad) * Math.cos(solarDec)) - Math.tan(latRad) * Math.tan(solarDec));
-        if(time==1) {
+        if (time == 1) {
             return hour_angle;
-        }else if(time==0){
+        } else if (time == 0) {
             return -hour_angle;
         }
         return 0;
     }
 
-    private double CalcSunriseGMT(int iJulDay, double latitude, double longitude)
-    {
+    private double CalcSunriseGMT(int iJulDay, double latitude, double longitude) {
         double gamma = CalcGamma(iJulDay);
         double eqTime = CalcEqofTime(gamma);
         double solarDec = CalcSolarDec(gamma);
@@ -260,7 +253,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         double delta = longitude - RadianToDegree(hourAngle);
         double timeDiff = 4.0 * delta;
         double timeGMT = 720.0 + timeDiff - eqTime;
-        double gamma_sunrise = CalcGamma2(iJulDay, (int) (timeGMT/60.0));
+        double gamma_sunrise = CalcGamma2(iJulDay, (int) (timeGMT / 60.0));
         eqTime = CalcEqofTime(gamma_sunrise);
         solarDec = CalcSolarDec(gamma_sunrise);
         hourAngle = CalcHourAngle(latitude, solarDec, 1);
@@ -271,8 +264,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         return timeGMT;
     }
 
-    private double CalcSunsetGMT(int iJulDay, double latitude, double longitude)
-    {
+    private double CalcSunsetGMT(int iJulDay, double latitude, double longitude) {
         // First calculates sunrise and approx length of day
         double gamma = CalcGamma(iJulDay + 1);
         double eqTime = CalcEqofTime(gamma);
@@ -282,7 +274,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         double timeDiff = 4.0 * delta;
         double setTimeGMT = 720.0 + timeDiff - eqTime;
         // first pass used to include fractional day in gamma calc
-        double gamma_sunset = CalcGamma2(iJulDay, (int) (setTimeGMT/60.0));
+        double gamma_sunset = CalcGamma2(iJulDay, (int) (setTimeGMT / 60.0));
         eqTime = CalcEqofTime(gamma_sunset);
         solarDec = CalcSolarDec(gamma_sunset);
         hourAngle = CalcHourAngle(latitude, solarDec, 0);
@@ -301,7 +293,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         double floatSec = 60.0 * (floatMinute - Math.floor(floatMinute));
         second1 = Math.floor(floatSec);
 
-        Log.e("TAG rise", " " + (int)hour1 + "시 " + (int)minute1 + "분 " + (int)second1 + "초");
+        Log.e("TAG rise", " " + (int) hour1 + "시 " + (int) minute1 + "분 " + (int) second1 + "초");
     }
 
     private void GetTimeString2(double minutes) {
@@ -312,7 +304,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         double floatSec = 60.0 * (floatMinute - Math.floor(floatMinute));
         second2 = Math.floor(floatSec);
 
-        Log.e("TAG set", " " + (int)hour2 + "시 " + (int)minute2 + "분 " + (int)second2 + "초");
+        Log.e("TAG set", " " + (int) hour2 + "시 " + (int) minute2 + "분 " + (int) second2 + "초");
 
 
     }
@@ -338,8 +330,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         lst = GetSunsetTime(Year, Month, Day, latitude, longitude, -9, 0);
         GetTimeString2(lst);
-        sh = (int)hour2;
-        sm = (int)minute2;
+        sh = (int) hour2;
+        sm = (int) minute2;
     }
 
     public void sunrisetest() {
@@ -351,8 +343,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         lst = GetSunriseTime(Year, Month, Day, latitude, longitude, -9, 0);
         GetTimeString1(lst);
-        rh = (int)hour1;
-        rm = (int)minute1;
+        rh = (int) hour1;
+        rm = (int) minute1;
     }
 
 
@@ -405,7 +397,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         Hour = Integer.valueOf(strCurHour);
         Minute = Integer.valueOf(strCurMinute);
 
-        Log.e("TAG","YEAR : "+Year+" Month : "+Month+" Day : "+ Day +" Hour: "+Hour+" Minute : " +Minute);
+        Log.e("TAG", "YEAR : " + Year + " Month : " + Month + " Day : " + Day + " Hour: " + Hour + " Minute : " + Minute);
 
 
         //Using the Sensors
@@ -451,7 +443,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
 
         mPolylineOptions = new PolylineOptions();
-
 
 
         stepCount = 0;
@@ -518,7 +509,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mSensorManager
                 .registerListener(mClsLis, mSensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY),
                         SensorManager.SENSOR_DELAY_FASTEST);
-        mSensorManager.registerListener(mDirLis, mDirSensor, SensorManager.SENSOR_DELAY_NORMAL);
+        mSensorManager.registerListener(mDirLis, mDirSensor, SensorManager.SENSOR_DELAY_FASTEST);
         mSensorManager.registerListener(mLightLis, mLightSensor, SensorManager.SENSOR_DELAY_FASTEST);
         mSensorManager.registerListener(mPressureLis, mPressureSensor, SensorManager.SENSOR_DELAY_FASTEST);
 
@@ -742,11 +733,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         public void onSensorChanged(SensorEvent event) {
             if (event.sensor.getType() == Sensor.TYPE_ORIENTATION) {
 //                compassValue = (int) event.values[0];
-                int newCompass = (int)event.values[0];
-                compassValue = (int)(compassValue+ALPHA*(newCompass-compassValue));
-                if(compassValue<0){
-                    compassValue = 360+compassValue;
-                }else if(compassValue > 360){
+                int newCompass = (int) event.values[0];
+                compassValue = (int) (compassValue + ALPHA * (newCompass - compassValue));
+                if (compassValue < 0) {
+                    compassValue = 360 + compassValue;
+                } else if (compassValue > 360) {
                     compassValue = compassValue - 360;
                 }
                 Log.e("compassValue : ", String.valueOf(compassValue));
@@ -864,11 +855,22 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             } else {
                 Log.e("test", "indoors");
 
-//                mMap.setMyLocationEnabled(false);
+                if (ActivityCompat.checkSelfPermission(MapsActivity.this, permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(MapsActivity.this, permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                    // TODO: Consider calling
+                    //    ActivityCompat#requestPermissions
+                    // here to request the missing permissions, and then overriding
+                    //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                    //                                          int[] grantResults)
+                    // to handle the case where the user grants the permission. See the documentation
+                    // for ActivityCompat#requestPermissions for more details.
+                    return;
+                }
+                mMap.setMyLocationEnabled(false);
+                mMap.setMyLocationEnabled(false);
 //                mMap.getUiSettings().setZoomGesturesEnabled(false);
 //                mMap.getUiSettings().setScrollGesturesEnabled(false);
 //                mMap.getUiSettings().setRotateGesturesEnabled(false);
-//                mMap.getUiSettings().setCompassEnabled(true);
+                mMap.getUiSettings().setCompassEnabled(false);
                 }
 
         }
@@ -897,10 +899,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap.getUiSettings().setTiltGesturesEnabled(false);
         mMap.getUiSettings().setScrollGesturesEnabled(false);
         mMap.getUiSettings().setRotateGesturesEnabled(false);
-        mMap.getUiSettings().setCompassEnabled(false);
-//        if(ContextCompat.checkSelfPermission(this, permission.ACCESS_FINE_LOCATION)==PackageManager.PERMISSION_GRANTED){
-//            mMap.setMyLocationEnabled(true);
-//        }
+        mMap.getUiSettings().setCompassEnabled(true);
+        if(ContextCompat.checkSelfPermission(this, permission.ACCESS_FINE_LOCATION)==PackageManager.PERMISSION_GRANTED){
+            mMap.setMyLocationEnabled(true);
+        }
 
         // Add a marker in Sydney, Australia, and move the camera.
    /* LatLng sydney = new LatLng(mLat, mLng);
