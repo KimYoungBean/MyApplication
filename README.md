@@ -37,8 +37,5 @@
 - For lightSensor to distribute the DAY/NIGHT
 
 #### What to do..
-- Drawing Line & Correct the Compass function
-- Using the Daum map application
-- We will make the navigation in the Building
-- untill : 18/01/25 (Thursday) 2 P.M.
-
+- Modify the low pass filter for correct direction
+- Research and Use the wifi/AP for find current location exactly 
