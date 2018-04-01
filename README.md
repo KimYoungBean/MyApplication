@@ -30,6 +30,12 @@
 - Drawing Ling following the Path
 - Correct the Compass function
 
+### Low pass Filter
+- Apply to the compass
+
+### Use the Sunset & Sunrise Time
+- For lightSensor to distribute the DAY/NIGHT
+
 #### What to do..
 - Drawing Line & Correct the Compass function
 - Using the Daum map application
