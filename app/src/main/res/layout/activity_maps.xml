@@ -20,10 +20,20 @@
 
     <Button
         android:id="@+id/btn_draw_gps"
+        android:text="draw"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_marginBottom="18dp"
-        android:layout_toEndOf="@+id/tv"
-        android:layout_toRightOf="@+id/tv" />
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginTop="128dp"
+        android:layout_alignParentRight="true" />
+
+    <Button
+        android:id="@+id/send"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_below="@+id/btn_draw_gps"
+        android:text="send"
+        android:layout_alignParentRight="true" />
 </RelativeLayout>

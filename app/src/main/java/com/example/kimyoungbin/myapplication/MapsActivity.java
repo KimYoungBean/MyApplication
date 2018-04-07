@@ -6,7 +6,10 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Matrix;
 import android.graphics.Point;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -15,6 +18,7 @@ import android.hardware.SensorManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -40,10 +44,14 @@ import com.google.android.gms.maps.model.PolylineOptions;
 
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.lang.reflect.Array;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -53,7 +61,14 @@ import java.util.Date;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, SensorEventListener {
     private TextView mTextView;
+    private Button sendBtn;
     int cnt;
+    String Time;
+
+    ArrayList filePaths = new ArrayList();
+
+    final static String foldername = Environment.getExternalStorageDirectory().getAbsolutePath()+"/CompassValue";
+    static String filename = "CompassValue.txt";
 
     /* Avoid counting faster than stepping */
     private boolean pocketFlag;
@@ -157,7 +172,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
 
     /* sun */
-    TextView sunset, sunrise;
 
     int Day;
     int Year;
@@ -374,7 +388,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         compassCount = 0;
         drawFlag = false;
 
-
         // Date & time
         long now = System.currentTimeMillis();
         Date date = new Date(now);
@@ -384,12 +397,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         SimpleDateFormat CurDayFormat = new SimpleDateFormat("dd");
         SimpleDateFormat CurHourFormat = new SimpleDateFormat("HH");
         SimpleDateFormat CurMinuteFormat = new SimpleDateFormat("mm");
+        SimpleDateFormat CurSecondFormat = new SimpleDateFormat("ss");
 
         String strCurYear = CurYearFormat.format(date);
         String strCurMonth = CurMonthFormat.format(date);
         String strCurDay = CurDayFormat.format(date);
         String strCurHour = CurHourFormat.format(date);
         String strCurMinute = CurMinuteFormat.format(date);
+        String strCurSecond = CurSecondFormat.format(date);
 
         Year = Integer.valueOf(strCurYear);
         Month = Integer.valueOf(strCurMonth);
@@ -399,7 +414,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         Log.e("TAG", "YEAR : " + Year + " Month : " + Month + " Day : " + Day + " Hour: " + Hour + " Minute : " + Minute);
 
-
+        Time = strCurYear+"/"+strCurMonth+"/"+strCurDay+"/"+strCurHour+":"+strCurMinute+":"+strCurSecond;
         //Using the Sensors
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
 
@@ -462,6 +477,59 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
         });
 
+        sendBtn = (Button) findViewById(R.id.send);
+
+        sendBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mMap.snapshot(new GoogleMap.SnapshotReadyCallback() {
+                    @Override
+                    public void onSnapshotReady(Bitmap snapshot) {
+                        if(snapshot == null){
+                            Toast.makeText(getApplicationContext(), "null", Toast.LENGTH_SHORT).show();
+                        }else{
+                            File cc = new File(Environment.getExternalStorageDirectory()+"/Pictures");
+                            if(!cc.exists()){
+                                cc.mkdir();
+                            }
+                            File fileCacheItem = new File(Environment.getExternalStorageDirectory()+"/Pictures/1.png");
+                            OutputStream out = null;
+                            try{
+                                fileCacheItem.createNewFile();
+                                out = new FileOutputStream(fileCacheItem);
+                                snapshot.compress(Bitmap.CompressFormat.JPEG, 100, out);
+                            }catch (Exception e){
+                                e.printStackTrace();
+                            }finally {
+                                try{
+                                    out.close();
+                                    Toast.makeText(getApplicationContext(), "saved", Toast.LENGTH_SHORT).show();
+                                }catch (IOException e){
+                                    e.printStackTrace();
+                                }
+                            }
+                        }
+                    }
+                });
+
+
+
+                String szSendFilePath = Environment.getExternalStorageDirectory()+"/CompassValue/CompassValue.txt";
+                File f = new File(szSendFilePath);
+                if(!f.exists()){
+                    Toast.makeText(getApplicationContext(), "", Toast.LENGTH_SHORT).show();
+                }
+                final Uri fileUri = Uri.fromFile(f);
+                Intent it = new Intent(Intent.ACTION_SEND_MULTIPLE);
+                it.setType("plain/text");
+                String[] address = {"whiteyb12@naver.com"};
+                it.putExtra(Intent.EXTRA_EMAIL, address);
+                it.putExtra(Intent.EXTRA_SUBJECT, "CompassValue "+Time);
+                it.putExtra(Intent.EXTRA_STREAM, fileUri);
+                startActivity(it);
+            }
+
+        });
         Intent intent = getIntent();
         String data = intent.getExtras().getString("height");
         height = Integer.parseInt(data);
@@ -509,12 +577,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mSensorManager
                 .registerListener(mClsLis, mSensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY),
                         SensorManager.SENSOR_DELAY_FASTEST);
-        mSensorManager.registerListener(mDirLis, mDirSensor, SensorManager.SENSOR_DELAY_FASTEST);
+        mSensorManager.registerListener(mDirLis, mDirSensor, SensorManager.SENSOR_DELAY_NORMAL);
         mSensorManager.registerListener(mLightLis, mLightSensor, SensorManager.SENSOR_DELAY_FASTEST);
         mSensorManager.registerListener(mPressureLis, mPressureSensor, SensorManager.SENSOR_DELAY_FASTEST);
 
         sunrisetest();
         sunsettest();
+
+
     }
 
     @Override
@@ -531,6 +601,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public void onDestroy() {
         super.onDestroy();
         Log.e("LOG", "onDestroy()");
+        removeDir("CompassValue");
+        removeDir("Pictures");
         mSensorManager.unregisterListener(mAccLis);
         mSensorManager.unregisterListener(mClsLis);
         mSensorManager.unregisterListener(mDirLis);
@@ -741,7 +813,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     compassValue = compassValue - 360;
                 }
                 Log.e("compassValue : ", String.valueOf(compassValue));
-
+                if(drawFlag){
+                    mOnFileWrite();
+                }
 
             }
         }
@@ -849,6 +923,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 mMarker = mMap.addMarker(new MarkerOptions().position(latlng).title("current location"));
                 if (drawFlag) {
                     mMap.addPolyline(mPolylineOptions.add(latlng).color(Color.RED).width(5));
+
                 }
                 mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latlng, 21));
 
@@ -911,5 +986,60 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
 
+    public void mOnFileWrite(){
+        long now = System.currentTimeMillis();
+        Date date = new Date(now);
+
+        SimpleDateFormat CurYearFormat = new SimpleDateFormat("yyyy");
+        SimpleDateFormat CurMonthFormat = new SimpleDateFormat("MM");
+        SimpleDateFormat CurDayFormat = new SimpleDateFormat("dd");
+        SimpleDateFormat CurHourFormat = new SimpleDateFormat("HH");
+        SimpleDateFormat CurMinuteFormat = new SimpleDateFormat("mm");
+        SimpleDateFormat CurSecondFormat = new SimpleDateFormat("ss");
+
+        String strCurYear = CurYearFormat.format(date);
+        String strCurMonth = CurMonthFormat.format(date);
+        String strCurDay = CurDayFormat.format(date);
+        String strCurHour = CurHourFormat.format(date);
+        String strCurMinute = CurMinuteFormat.format(date);
+        String strCurSecond = CurSecondFormat.format(date);
+
+        Time = strCurYear+"/"+strCurMonth+"/"+strCurDay+"/"+strCurHour+":"+strCurMinute+":"+strCurSecond;
+        String contents = "compassValue : "+compassValue+"\nTime : "+Time+"\n-----------------------\n";
+        WriteTextFile(foldername, filename, contents);
+    }
+
+    public void WriteTextFile(String foldername, String filename, String contents){
+        try{
+            File dir = new File(foldername);
+            if(!dir.exists()){
+                dir.mkdir();
+            }
+            FileOutputStream fos = new FileOutputStream(foldername+"/"+filename, true);
+            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(fos));
+            writer.write(contents);
+            writer.flush();
+            writer.close();
+            fos.close();
+
+        }catch (IOException e){
+            e.printStackTrace();
+        }
+    }
+
+    public static void removeDir(String dirName){
+        String mRootPath = Environment.getExternalStorageDirectory().getAbsolutePath()+File.separator+dirName;
+        File file = new File(mRootPath);
+        if(file.exists()){
+            if(file.isDirectory()){
+                File[] files = file.listFiles();
+                for(int i=0; i<files.length; i++){
+                    if(files[i].delete()){
+
+                    }
+                }
+            }
+        }
+    }
 }
 

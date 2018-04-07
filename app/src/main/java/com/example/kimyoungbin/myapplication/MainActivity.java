@@ -62,7 +62,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void mOnFileWrite(View v){
-        String contents = "Log 생성\nname : "+name.getText().toString()+"\nage : "+age.getText().toString()+"\nheight : "+height.getText().toString()+"\nsex : "+sex;
+        String contents = "-----------------------\nname : "+name.getText().toString()+"\nage : "+age.getText().toString()+"\nheight : "+height.getText().toString()+"\nsex : "+sex+"\n";
         WriteTextFile(foldername, filename, contents);
     }
 
