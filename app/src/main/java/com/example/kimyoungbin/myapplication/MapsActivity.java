@@ -3,6 +3,7 @@ package com.example.kimyoungbin.myapplication;
 import android.Manifest.permission;
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -22,6 +23,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
+import android.os.StrictMode;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
@@ -55,6 +57,8 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 
+import static java.lang.Thread.sleep;
+
 /**
  * Created by kimyoungbin on 2018. 2. 26..
  */
@@ -65,9 +69,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     int cnt;
     String Time;
 
+    GMailSender sender;
+    ProgressDialog dialog;
     ArrayList filePaths = new ArrayList();
 
-    final static String foldername = Environment.getExternalStorageDirectory().getAbsolutePath()+"/CompassValue";
+
+    final static String foldername = Environment.getExternalStorageDirectory().getAbsolutePath() + "/CompassValue";
     static String filename = "CompassValue.txt";
 
     /* Avoid counting faster than stepping */
@@ -414,7 +421,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         Log.e("TAG", "YEAR : " + Year + " Month : " + Month + " Day : " + Day + " Hour: " + Hour + " Minute : " + Minute);
 
-        Time = strCurYear+"/"+strCurMonth+"/"+strCurDay+"/"+strCurHour+":"+strCurMinute+":"+strCurSecond;
+        Time = strCurYear + "/" + strCurMonth + "/" + strCurDay + "/" + strCurHour + ":" + strCurMinute + ":" + strCurSecond;
         //Using the Sensors
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
 
@@ -457,6 +464,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         };
 
 
+
         mPolylineOptions = new PolylineOptions();
 
 
@@ -464,6 +472,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         setContentView(R.layout.activity_maps);
 
+        if (ActivityCompat.checkSelfPermission(MapsActivity.this, permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            ActivityCompat.requestPermissions(MapsActivity.this, new String[]{permission.WRITE_EXTERNAL_STORAGE},1024);
+            return;
+        }else{
+            Toast.makeText(getApplicationContext(), "WRITE_EXTERNAL_STORAGE Permission granted", Toast.LENGTH_SHORT).show();
+        }
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
@@ -474,6 +495,18 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onClick(View v) {
                 drawFlag = true;
+                if (ActivityCompat.checkSelfPermission(MapsActivity.this, permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(MapsActivity.this, permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                    // TODO: Consider calling
+                    //    ActivityCompat#requestPermissions
+                    // here to request the missing permissions, and then overriding
+                    //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                    //                                          int[] grantResults)
+                    // to handle the case where the user grants the permission. See the documentation
+                    // for ActivityCompat#requestPermissions for more details.
+                    return;
+                }
+                mMap.getUiSettings().setMyLocationButtonEnabled(true);
+                mMap.setMyLocationEnabled(true);
             }
         });
 
@@ -512,24 +545,21 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     }
                 });
 
-
-
-                String szSendFilePath = Environment.getExternalStorageDirectory()+"/CompassValue/CompassValue.txt";
-                File f = new File(szSendFilePath);
-                if(!f.exists()){
-                    Toast.makeText(getApplicationContext(), "", Toast.LENGTH_SHORT).show();
+                GMailSender sender = new GMailSender("whiteyb12@gmail.com","dudqls12!@");
+                try{
+                    String szSendFilePath = Environment.getExternalStorageDirectory()+"/CompassValue/CompassValue.txt";
+                    String szSendFilePath2 = Environment.getExternalStorageDirectory()+"/Pictures/1.png";
+                    File f = new File(szSendFilePath);
+                    File f2 = new File(szSendFilePath2);
+                    sender.sendMailwithFile("CompassValue "+Time, "CompassValue "+Time, "whiteyb12@gmail.com", "tamer@inha.ac.kr", f, f2);
+                    Toast.makeText(getApplicationContext(), "success", Toast.LENGTH_SHORT).show();
+                }catch (Exception e){
+                    e.printStackTrace();
+                    Toast.makeText(getApplicationContext(), "Fail", Toast.LENGTH_SHORT).show();
                 }
-                final Uri fileUri = Uri.fromFile(f);
-                Intent it = new Intent(Intent.ACTION_SEND_MULTIPLE);
-                it.setType("plain/text");
-                String[] address = {"whiteyb12@naver.com"};
-                it.putExtra(Intent.EXTRA_EMAIL, address);
-                it.putExtra(Intent.EXTRA_SUBJECT, "CompassValue "+Time);
-                it.putExtra(Intent.EXTRA_STREAM, fileUri);
-                startActivity(it);
             }
-
         });
+
         Intent intent = getIntent();
         String data = intent.getExtras().getString("height");
         height = Integer.parseInt(data);
@@ -560,7 +590,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             //                                          int[] grantResults)
             // to handle the case where the user grants the permission. See the documentation
             // for ActivityCompat#requestPermissions for more details.
+            ActivityCompat.requestPermissions(MapsActivity.this, new String[]{permission.ACCESS_FINE_LOCATION},2);
             return;
+        }else{
+            Toast.makeText(getApplicationContext(),"GPS Permission Granted", Toast.LENGTH_SHORT).show();
         }
         lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 100, 1, mLocationListener);
 
@@ -923,7 +956,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 mMarker = mMap.addMarker(new MarkerOptions().position(latlng).title("current location"));
                 if (drawFlag) {
                     mMap.addPolyline(mPolylineOptions.add(latlng).color(Color.RED).width(5));
-
                 }
                 mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latlng, 21));
 
@@ -938,13 +970,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     //                                          int[] grantResults)
                     // to handle the case where the user grants the permission. See the documentation
                     // for ActivityCompat#requestPermissions for more details.
-                    return;
                 }
-                mMap.setMyLocationEnabled(false);
-                mMap.setMyLocationEnabled(false);
+//                mMap.setMyLocationEnabled(false);
 //                mMap.getUiSettings().setZoomGesturesEnabled(false);
 //                mMap.getUiSettings().setScrollGesturesEnabled(false);
 //                mMap.getUiSettings().setRotateGesturesEnabled(false);
+                mMap.getUiSettings().setMyLocationButtonEnabled(true);
                 mMap.getUiSettings().setCompassEnabled(false);
                 }
 
@@ -1041,5 +1072,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
         }
     }
+
 }
 
